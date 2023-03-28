@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { addToDb, getShoppingCart } from '../../utilities/fakedb';
+import Cart from '../Cart/Cart';
 import Product from '../Product/Product';
 import './Shop.css'
 
@@ -8,27 +10,46 @@ const Shop = () => {
 
     const [cart, setCart] = useState([])
 
-    useEffect(()=>{
+    useEffect(() => {
         fetch('products.json')
-        .then(res => res.json())
-        .then(data => setProducts(data))
-    },[]);
+            .then(res => res.json())
+            .then(data => setProducts(data))
+    }, []);
+
+    useEffect(() => {
+        const storedCart = getShoppingCart();
+        const savedCart = [];
+        // step1: get the id
+        for (const id in storedCart) {
+            // step2: get the product by using id
+            const addedProduct = products.find(product => product.id === id)
+            if (addedProduct) {
+                // step3: get quantity of the product
+                const quantity = storedCart[id]
+                addedProduct.quantity = quantity
+                // step4: add the addedProduct to the savedCart
+                savedCart.push(addedProduct)
+            }
+        }
+        // step5: set the cart
+        setCart(savedCart)
+    }, [products])
 
     const handleAddToCart = (product) => {
         let newCart = [...cart, product];
         setCart(newCart)
+        addToDb(product.id)
     }
 
     return (
         <div className='shop'>
             <div className="products-container">
                 {
-                    products.map(product => <Product product={product} key={product.id} handleAddToCart ={handleAddToCart}></Product>)
+                    products.map(product => <Product product={product} key={product.id} handleAddToCart={handleAddToCart}></Product>)
                 }
             </div>
             <div className="card-container">
-                <h4>Order Summary</h4>
-                <p>Selected Items: {cart.length}</p>
+                <Cart cart={cart}></Cart>
             </div>
         </div>
     );
